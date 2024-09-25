@@ -6,6 +6,12 @@ import (
 	"os"
 )
 
+const (
+	fontPathBold    = "./font/PingFang-SC-Bold.ttf"
+	fontPathRegular = "./font/PingFang-SC-Regular.ttf"
+	fontPathLight   = "./font/PingFang-SC-Light.ttf"
+)
+
 func generatePdf(name, baseInfo, content string, images []string) (pdfPath string, err error) {
 	//删除图片
 	defer func() {
@@ -82,7 +88,7 @@ func addPdfContent(pdf *gofpdf.Fpdf, title, content string) {
 	pageWidth, _ = pdf.GetPageSize()
 	leftWidth, _, rightWidth, _ = pdf.GetMargins()
 	num := math.Floor((pageWidth - leftWidth - rightWidth) / fontUnitSize)
-	content = util.CovertMultilineStr(content, int(num))
+	content = CovertMultilineStr(content, int(num))
 	pdf.SetXY(10, 23)
 	pdf.MultiCell(0, 5, content, "", "", false)
 }
@@ -98,4 +104,33 @@ func setPdfLogo(pdf *gofpdf.Fpdf) {
 		0,
 		"",
 	)
+}
+
+func SplitByN(s string, n int) []string {
+	var result []string
+	runes := []rune(s) // 将字符串转换为rune切片
+	j := 0
+	count := 0
+	for i := 0; i < len(runes); i++ {
+		count++
+		if string(runes[i]) == "\n" || count == n || i == len(runes)-1 {
+			result = append(result, string(runes[j:i+1]))
+			j = i + 1
+			count = 0
+		}
+	}
+	return result
+}
+
+func CovertMultilineStr(str string, num int) string {
+	textLines := SplitByN(str, num)
+	newTxtStr := ""
+	for _, textLine := range textLines {
+		if string(textLine[len(textLine)-1]) == "\n" {
+			newTxtStr += textLine
+		} else {
+			newTxtStr += textLine + "\n"
+		}
+	}
+	return newTxtStr
 }
