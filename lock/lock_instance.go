@@ -16,7 +16,6 @@ type LockInstanceIFace interface {
 	Release(context.Context) error
 }
 
-// not safe
 type LockInstance struct {
 	key    string
 	ranVal string

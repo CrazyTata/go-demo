@@ -1,12 +1,14 @@
 package lock
 
-import "time"
+import (
+	"time"
+)
 
 type mustSetOperation func() (string, error)
 
 type ErrNotify func(error)
 
-func mustSetRetryNotify(operation mustSetOperation, b Backoff, notify ErrNotify) (string, error) {
+func mustSetRetryNotify1(operation mustSetOperation, b Backoff, notify ErrNotify) (string, error) {
 
 	var err error
 	var randVal string

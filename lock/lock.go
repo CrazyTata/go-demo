@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/zeromicro/go-zero/core/logx"
 	"time"
 
 	"github.com/gomodule/redigo/redis"
@@ -94,9 +93,9 @@ func (r *RedisLock) MustSetRetry(ctx context.Context, key string) (string, error
 
 	notifyFunc := func(err error) {
 		if err == ErrLockFail {
-			logx.WithContext(ctx).Errorf("RedisLock.MustSetRetry redis must set err: %v", err)
+			fmt.Printf("RedisLock.MustSetRetry redis must set err: %v", err)
 		} else {
-			logx.WithContext(ctx).Errorf("RedisLock.MustSetRetry redis must set err: %v", err)
+			fmt.Printf("RedisLock.MustSetRetry redis must set err: %v", err)
 		}
 	}
 
@@ -120,13 +119,13 @@ func (r *RedisLock) MustSet(ctx context.Context, key string) (string, error) {
 func (r *RedisLock) Release(ctx context.Context, key string, randVal string) error {
 
 	if r == nil {
-		logx.WithContext(ctx).Infof("that the implementation of redis lock is nil")
+		fmt.Printf("that the implementation of redis lock is nil")
 		return nil
 	}
 
 	err := ReleaseWithContext(ctx, r.redisPool, key, randVal)
 	if err != nil {
-		logx.WithContext(ctx).Errorf("s.RedisLock.ReleaseWithContext fail, err: %v", err)
+		fmt.Printf("s.RedisLock.ReleaseWithContext fail, err: %v", err)
 		return ErrLockRelease
 	}
 
@@ -168,4 +167,37 @@ func ReleaseWithContext(ctx context.Context, redisPool *redis.Pool, key string, 
 	_, err := script.Do(conn, key, randVal)
 
 	return err
+}
+
+func mustSetRetryNotify(operation mustSetOperation, b Backoff, notify ErrNotify) (string, error) {
+
+	var err error
+	var randVal string
+	var wait time.Duration
+	var retry bool
+	var n int
+
+	for {
+
+		if randVal, err = operation(); err == nil {
+			return randVal, nil
+		}
+
+		if b == nil {
+			return "", err
+		}
+
+		n++
+		wait, retry = b.Next(n)
+		if !retry {
+			return "", err
+		}
+
+		if notify != nil {
+			notify(err)
+		}
+
+		time.Sleep(wait)
+	}
+
 }
